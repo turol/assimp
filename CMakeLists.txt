@@ -78,8 +78,8 @@ OPTION ( ASSIMP_COVERALLS
   "Enable this to measure test coverage."
   OFF
 )
-OPTION ( ASSIMP_WERRRO
-  "Treat warnings as errors."
+OPTION ( ASSIMP_ASAN
+  "Enable AddressSanitizer."
   OFF
 )
 OPTION ( SYSTEM_IRRXML
@@ -216,9 +216,9 @@ if (ASSIMP_COVERALLS)
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
 endif()
 
-if (ASSIMP_WERROR)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+if (ASSIMP_ASAN)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
 endif()
 
 INCLUDE (FindPkgMacros)

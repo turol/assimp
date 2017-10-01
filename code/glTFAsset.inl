@@ -40,7 +40,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "StringUtils.h"
-#include <iomanip>
 
 // Header files, Assimp
 #include <assimp/DefaultLogger.hpp>
@@ -127,12 +126,6 @@ namespace {
     {
         Value::MemberIterator it = val.FindMember(id);
         return (it != val.MemberEnd() && it->value.IsString()) ? &it->value : 0;
-    }
-
-    inline Value* FindNumber(Value& val, const char* id)
-    {
-        Value::MemberIterator it = val.FindMember(id);
-        return (it != val.MemberEnd() && it->value.IsNumber()) ? &it->value : 0;
     }
 
     inline Value* FindArray(Value& val, const char* id)
@@ -316,9 +309,7 @@ inline void Buffer::Read(Value& obj, Asset& r)
     }
     else { // Local file
         if (byteLength > 0) {
-            std::string dir = !r.mCurrentAssetDir.empty() ? (r.mCurrentAssetDir + "/") : "";
-
-            IOStream* file = r.OpenFile(dir + uri, "rb");
+            IOStream* file = r.OpenFile(uri, "rb");
             if (file) {
                 bool ok = LoadFromStream(*file, byteLength);
                 delete file;
@@ -341,7 +332,7 @@ inline bool Buffer::LoadFromStream(IOStream& stream, size_t length, size_t baseO
         stream.Seek(baseOffset, aiOrigin_SET);
     }
 
-    mData.reset(new uint8_t[byteLength]);
+    mData.reset(new uint8_t[byteLength], std::default_delete<uint8_t[]>());
 
     if (stream.Read(mData.get(), byteLength, 1) != 1) {
         return false;
@@ -1237,21 +1228,13 @@ inline void Scene::Read(Value& obj, Asset& r)
 inline void AssetMetadata::Read(Document& doc)
 {
     // read the version, etc.
+    float statedVersion = 0;
     if (Value* obj = FindObject(doc, "asset")) {
         ReadMember(*obj, "copyright", copyright);
         ReadMember(*obj, "generator", generator);
 
         premultipliedAlpha = MemberOrDefault(*obj, "premultipliedAlpha", false);
-
-        if (Value* versionString = FindString(*obj, "version")) {
-            version = versionString->GetString();
-        } else if (Value* versionNumber = FindNumber (*obj, "version")) {
-            char buf[4];
-
-            ai_snprintf(buf, 4, "%.1f", versionNumber->GetDouble());
-
-            version = buf;
-        }
+        statedVersion = MemberOrDefault(*obj, "version", 0);
 
         if (Value* profile = FindObject(*obj, "profile")) {
             ReadMember(*profile, "api",     this->profile.api);
@@ -1259,8 +1242,16 @@ inline void AssetMetadata::Read(Document& doc)
         }
     }
 
-    if (version.empty() || version[0] != '1') {
-        throw DeadlyImportError("GLTF: Unsupported glTF version: " + version);
+    version = std::max(statedVersion, version);
+    if (version == 0) {
+        // if missing version, we'll assume version 1...
+        version = 1;
+    }
+
+    if (version != 1) {
+        char msg[128];
+        ai_snprintf(msg, 128, "GLTF: Unsupported glTF version: %.0f", version);
+        throw DeadlyImportError(msg);
     }
 }
 
@@ -1282,7 +1273,7 @@ inline void Asset::ReadBinaryHeader(IOStream& stream)
     }
 
     AI_SWAP4(header.version);
-    asset.version = std::to_string(header.version);
+    asset.version = header.version;
     if (header.version != 1) {
         throw DeadlyImportError("GLTF: Unsupported binary glTF version");
     }
