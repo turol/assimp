@@ -200,7 +200,7 @@ bool MakeVerboseFormatProcess::MakeVerboseFormat(aiMesh* pcMesh)
     p = 0;
     while (pcMesh->HasVertexColors(p))
     {
-        delete pcMesh->mColors[p];
+        delete[] pcMesh->mColors[p];
         pcMesh->mColors[p] = apvColorSets[p];
         ++p;
     }
