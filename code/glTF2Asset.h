@@ -511,7 +511,7 @@ namespace glTF2
 
 			/// \fn ~SEncodedRegion()
 			/// Destructor.
-			~SEncodedRegion() { delete [] DecodedData; }
+			~SEncodedRegion() { delete[] DecodedData; }
 		};
 
 		/******************* Variables *******************/
@@ -781,7 +781,7 @@ namespace glTF2
     struct Node : public Object
     {
         std::vector< Ref<Node> > children;
-        Ref<Mesh> mesh;
+        std::vector< Ref<Mesh> > meshes;
 
         Nullable<mat4> matrix;
         Nullable<vec3> translation;

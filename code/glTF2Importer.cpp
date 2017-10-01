@@ -239,7 +239,9 @@ void glTF2Importer::ImportMaterials(glTF2::Asset& r)
         SetMaterialColorProperty(r, mat.emissiveFactor, aimat, AI_MATKEY_COLOR_EMISSIVE);
 
         aimat->AddProperty(&mat.doubleSided, 1, AI_MATKEY_TWOSIDED);
-        aimat->AddProperty(&mat.alphaMode, 1, AI_MATKEY_GLTF_ALPHAMODE);
+
+        aiString alphaMode(mat.alphaMode);
+        aimat->AddProperty(&alphaMode, AI_MATKEY_GLTF_ALPHAMODE);
         aimat->AddProperty(&mat.alphaCutoff, 1, AI_MATKEY_GLTF_ALPHACUTOFF);
 
         //pbrSpecularGlossiness
@@ -517,15 +519,22 @@ aiNode* ImportNode(aiScene* pScene, glTF2::Asset& r, std::vector<unsigned int>& 
         }
     }
 
-    if (node.mesh) {
-        ainode->mNumMeshes = 1;
-        ainode->mMeshes = new unsigned int[1];
+    if (!node.meshes.empty()) {
+        int count = 0;
+        for (size_t i = 0; i < node.meshes.size(); ++i) {
+            int idx = node.meshes[i].GetIndex();
+            count += meshOffsets[idx + 1] - meshOffsets[idx];
+        }
+        ainode->mNumMeshes = count;
+
+        ainode->mMeshes = new unsigned int[count];
 
         int k = 0;
-        int idx = node.mesh.GetIndex();
-
-        for (unsigned int j = meshOffsets[idx]; j < meshOffsets[idx + 1]; ++j, ++k) {
-            ainode->mMeshes[k] = j;
+        for (size_t i = 0; i < node.meshes.size(); ++i) {
+            int idx = node.meshes[i].GetIndex();
+            for (unsigned int j = meshOffsets[idx]; j < meshOffsets[idx + 1]; ++j, ++k) {
+                ainode->mMeshes[k] = j;
+            }
         }
     }
 

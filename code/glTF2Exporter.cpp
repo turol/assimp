@@ -110,6 +110,7 @@ glTF2Exporter::glTF2Exporter(const char* filename, IOSystem* pIOSystem, const ai
     }
 
     ExportMeshes();
+    MergeMeshes();
 
     ExportScene();
 
@@ -424,20 +425,11 @@ void glTF2Exporter::ExportMaterials()
         mat->Get(AI_MATKEY_TWOSIDED, m->doubleSided);
         mat->Get(AI_MATKEY_GLTF_ALPHACUTOFF, m->alphaCutoff);
 
-        bool foundAlphaMode = false;
-        for (size_t i = 0; i < mat->mNumProperties; ++i) {
-            aiMaterialProperty *prop = mat->mProperties[i];
-            if (prop->mKey != aiString("$mat.gltf.alphaMode"))
-                continue;
+        aiString alphaMode;
 
-            std::string alphaMode;
-            for (size_t c = 0; c < prop->mDataLength; ++c)
-                alphaMode += prop->mData[c];
-            m->alphaMode = alphaMode;
-            foundAlphaMode = true;
-        }
-
-        if (!foundAlphaMode) {
+        if (mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS) {
+            m->alphaMode = alphaMode.C_Str();
+        } else {
             float opacity;
 
             if (mat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) {
@@ -476,10 +468,11 @@ void glTF2Exporter::ExportMaterials()
  */
 bool FindMeshNode(Ref<Node>& nodeIn, Ref<Node>& meshNode, std::string meshID)
 {
-
-    if (nodeIn->mesh && meshID.compare(nodeIn->mesh->id) == 0) {
-        meshNode = nodeIn;
-        return true;
+    for (unsigned int i = 0; i < nodeIn->meshes.size(); ++i) {
+        if (meshID.compare(nodeIn->meshes[i]->id) == 0) {
+            meshNode = nodeIn;
+            return true;
+        }
     }
 
     for (unsigned int i = 0; i < nodeIn->children.size(); ++i) {
@@ -541,7 +534,7 @@ void ExportSkin(Asset& mAsset, const aiMesh* aimesh, Ref<Mesh>& meshRef, Ref<Buf
         Ref<Node> nodeRef = mAsset.nodes.Get(aib->mName.C_Str());
         nodeRef->jointName = nodeRef->name;
 
-        unsigned int jointNamesIndex;
+        unsigned int jointNamesIndex = 0;
         bool addJointToJointNames = true;
         for ( unsigned int idx_joint = 0; idx_joint < skinRef->jointNames.size(); ++idx_joint) {
             if (skinRef->jointNames[idx_joint]->jointName.compare(nodeRef->jointName) == 0) {
@@ -742,6 +735,33 @@ void glTF2Exporter::ExportMeshes()
     }
 }
 
+//merges a node's multiple meshes (with one primitive each) into one mesh with multiple primitives
+void glTF2Exporter::MergeMeshes()
+{
+    for (unsigned int n = 0; n < mAsset->nodes.Size(); ++n) {
+        Ref<Node> node = mAsset->nodes.Get(n);
+
+        unsigned int nMeshes = static_cast<unsigned int>(node->meshes.size());
+
+        //skip if it's 1 or less meshes per node
+        if (nMeshes > 1) {
+            Ref<Mesh> firstMesh = node->meshes.at(0);
+
+            //loop backwards to allow easy removal of a mesh from a node once it's merged
+            for (unsigned int m = nMeshes - 1; m >= 1; --m) {
+                Ref<Mesh> mesh = node->meshes.at(m);
+
+                firstMesh->primitives.insert(firstMesh->primitives.end(), mesh->primitives.begin(), mesh->primitives.end());
+
+                node->meshes.erase(node->meshes.begin() + m);
+            }
+
+            //since we were looping backwards, reverse the order of merged primitives to their original order
+            std::reverse(firstMesh->primitives.begin() + 1, firstMesh->primitives.end());
+        }
+    }
+}
+
 /*
  * Export the root node of the node hierarchy.
  * Calls ExportNode for all children.
@@ -755,8 +775,8 @@ unsigned int glTF2Exporter::ExportNodeHierarchy(const aiNode* n)
         CopyValue(n->mTransformation, node->matrix.value);
     }
 
-    if (n->mNumMeshes > 0) {
-        node->mesh = mAsset->meshes.Get(n->mMeshes[0]);
+    for (unsigned int i = 0; i < n->mNumMeshes; ++i) {
+        node->meshes.push_back(mAsset->meshes.Get(n->mMeshes[i]));
     }
 
     for (unsigned int i = 0; i < n->mNumChildren; ++i) {
@@ -784,8 +804,8 @@ unsigned int glTF2Exporter::ExportNode(const aiNode* n, Ref<Node>& parent)
         CopyValue(n->mTransformation, node->matrix.value);
     }
 
-    if (n->mNumMeshes > 0) {
-        node->mesh = mAsset->meshes.Get(n->mMeshes[0]);
+    for (unsigned int i = 0; i < n->mNumMeshes; ++i) {
+        node->meshes.push_back(mAsset->meshes.Get(n->mMeshes[i]));
     }
 
     for (unsigned int i = 0; i < n->mNumChildren; ++i) {

@@ -1064,6 +1064,10 @@ void Converter::GenerateTransformationNodeChain( const Model& model, std::vector
                 continue;
             }
 
+            if ( comp == TransformationComp_PostRotation  ) {
+                chain[ i ] = chain[ i ].Inverse();
+            }
+
             aiNode* nd = new aiNode();
             output_nodes.push_back( nd );
 
@@ -1092,7 +1096,7 @@ void Converter::SetupNodeMetadata( const Model& model, aiNode& nd )
     DirectPropertyMap unparsedProperties = props.GetUnparsedProperties();
 
     // create metadata on node
-    std::size_t numStaticMetaData = 2;
+    const std::size_t numStaticMetaData = 2;
     aiMetadata* data = aiMetadata::Alloc( static_cast<unsigned int>(unparsedProperties.size() + numStaticMetaData) );
     nd.mMetaData = data;
     int index = 0;

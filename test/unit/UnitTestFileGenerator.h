@@ -5,7 +5,6 @@ Open Asset Import Library (assimp)
 
 Copyright (c) 2006-2017, assimp team
 
-
 All rights reserved.
 
 Redistribution and use of this software in source and binary forms,
@@ -39,42 +38,39 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ---------------------------------------------------------------------------
 */
-#include "UnitTestPCH.h"
+#pragma once
 
-#include <assimp/scene.h>
-#include <assimp/Importer.hpp>
-#include <assimp/Exporter.hpp>
+#include <cstdio>
+#include <cstdlib>
+#include <gtest/gtest.h>
 
-#include "TestModelFactory.h"
-
-using namespace Assimp;
-
-class utIssues : public ::testing::Test {
-
-};
-
-#ifndef ASSIMP_BUILD_NO_EXPORT
-
-TEST_F( utIssues, OpacityBugWhenExporting_727 ) {
-    float opacity;
-    aiScene *scene( TestModelFacttory::createDefaultTestModel( opacity ) );
-    Assimp::Importer importer;
-    Assimp::Exporter exporter;
-                
-    std::string path = "dae";
-    const aiExportFormatDesc *desc( exporter.GetExportFormatDescription( 0 ) );
-    EXPECT_NE( desc, nullptr );
-    path.append( desc->fileExtension );
-    EXPECT_EQ( AI_SUCCESS, exporter.Export( scene, desc->id, path ) );
-    const aiScene *newScene( importer.ReadFile( path, 0 ) );
-    EXPECT_TRUE( NULL != newScene );
-    float newOpacity;
-    if ( newScene->mNumMaterials > 0 ) {
-        std::cout << "Desc = " << desc->description << "\n";
-        EXPECT_EQ( AI_SUCCESS, newScene->mMaterials[ 0 ]->Get( AI_MATKEY_OPACITY, newOpacity ) );
-        EXPECT_EQ( opacity, newOpacity );
+#if defined(__GNUC__) || defined(__clang__)
+#define TMP_PATH "/tmp/"
+inline FILE* MakeTmpFile(char* tmplate)
+{
+    auto fd = mkstemp(tmplate);
+    EXPECT_NE(-1, fd);
+    if(fd == -1)
+    {
+        return nullptr;
     }
-    delete scene;
+    auto fs = fdopen(fd, "w+");
+    EXPECT_NE(nullptr, fs);
+    return fs;
 }
-
-#endif // ASSIMP_BUILD_NO_EXPORT
+#elif defined(_MSC_VER)
+#include <io.h>
+#define TMP_PATH "./"
+inline FILE* MakeTmpFile(char* tmplate)
+{
+    auto pathtemplate = _mktemp(tmplate);
+    EXPECT_NE(pathtemplate, nullptr);
+    if(pathtemplate == nullptr)
+    {
+        return nullptr;
+    }
+    auto* fs = std::fopen(pathtemplate, "w+");
+    EXPECT_NE(fs, nullptr);
+    return fs;
+}
+#endif

@@ -78,10 +78,6 @@ OPTION ( ASSIMP_COVERALLS
   "Enable this to measure test coverage."
   OFF
 )
-OPTION ( ASSIMP_WERRRO
-  "Treat warnings as errors."
-  OFF
-)
 OPTION ( ASSIMP_ASAN
   "Enable AddressSanitizer."
   OFF
@@ -208,9 +204,11 @@ ELSEIF(MSVC)
   # enable multi-core compilation with MSVC
   add_compile_options(/MP)
 ELSEIF ( "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" )
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fvisibility=hidden -fPIC -Wall -Wno-long-long -pedantic -std=c++11" )
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fvisibility=hidden -fPIC -Wall -Wno-long-long -std=c++11" )
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 ELSEIF( CMAKE_COMPILER_IS_MINGW )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -Wall -Wno-long-long -pedantic -std=c++11" )
+  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -Wall -Wno-long-long -std=c++11" )
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
   ADD_DEFINITIONS( -U__STRICT_ANSI__ )
 ENDIF()
 
@@ -220,14 +218,9 @@ if (ASSIMP_COVERALLS)
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
 endif()
 
-if (ASSIMP_WERROR)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-endif()
-
 if (ASSIMP_ASAN)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fsanitize=address -fno-omit-frame-pointer")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fsanitize=address -fno-omit-frame-pointer")
 endif()
 
 INCLUDE (FindPkgMacros)
