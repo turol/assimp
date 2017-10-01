@@ -193,7 +193,7 @@ bool MakeVerboseFormatProcess::MakeVerboseFormat(aiMesh* pcMesh)
     p = 0;
     while (pcMesh->HasTextureCoords(p))
     {
-        delete pcMesh->mTextureCoords[p];
+        delete[] pcMesh->mTextureCoords[p];
         pcMesh->mTextureCoords[p] = apvTextureCoords[p];
         ++p;
     }
