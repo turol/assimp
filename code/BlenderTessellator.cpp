@@ -64,7 +64,6 @@ namspace Assimp
         static auto prefix = "BLEND_TESS_GL: ";
         return prefix;
     }
-    template< > const std::string LogFunctions< BlenderTessellatorGL >::log_prefix = "BLEND_TESS_GL: ";
 }
 
 using namespace Assimp;
