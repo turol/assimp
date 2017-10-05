@@ -59,11 +59,6 @@ static const unsigned int BLEND_TESS_MAGIC = 0x83ed9ac3;
 
 namspace Assimp
 {
-    template< > const char* LogErrorPrefix< BlenderTessellatorGL >()
-    {
-        static auto prefix = "BLEND_TESS_GL: ";
-        return prefix;
-    }
     template< > const std::string LogFunctions< BlenderTessellatorGL >::log_prefix = "BLEND_TESS_GL: ";
 }
 
@@ -257,11 +252,7 @@ void BlenderTessellatorGL::TessellateError( GLenum errorCode, void* )
 
 namespace Assimp
 {
-    template< > const char* LogErrorPrefix< BlenderTessellatorP2T >()
-    {
-        static auto prefix = "BLEND_TESS_P2T: ";
-        return prefix;
-    }
+    template< > const std::string LogFunctions< BlenderTessellatorP2T >::log_prefix = "BLEND_TESS_P2T: ";
 }
 
 using namespace Assimp;
