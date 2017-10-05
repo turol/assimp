@@ -83,8 +83,11 @@ struct free_it
 };
 
 namespace Assimp { // this has to be in here because LogFunctions is in ::Assimp
-template<> const std::string LogFunctions<XGLImporter>::log_prefix = "XGL: ";
-
+    template< > const char* LogErrorPrefix< XGLImporter >()
+    {
+        static auto prefix = "XGL: ";
+        return prefix;
+    }
 }
 
 static const aiImporterDesc desc = {

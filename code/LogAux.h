@@ -50,6 +50,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assimp/DefaultLogger.hpp>
 
 namespace Assimp {
+template<typename T>
+const char* LogErrorPrefix();
 
 template <class TDeriving>
 class LogFunctions
@@ -60,34 +62,34 @@ public:
     // ------------------------------------------------------------------------------------------------
     static void ThrowException(const std::string& msg)
     {
-        throw DeadlyImportError(log_prefix+msg);
+        throw DeadlyImportError(LogErrorPrefix<TDeriving>() +msg);
     }
 
     // ------------------------------------------------------------------------------------------------
     static void LogWarn(const Formatter::format& message)   {
         if (!DefaultLogger::isNullLogger()) {
-            DefaultLogger::get()->warn(log_prefix+(std::string)message);
+            DefaultLogger::get()->warn(LogErrorPrefix<TDeriving>() +(std::string)message);
         }
     }
 
     // ------------------------------------------------------------------------------------------------
     static void LogError(const Formatter::format& message)  {
         if (!DefaultLogger::isNullLogger()) {
-            DefaultLogger::get()->error(log_prefix+(std::string)message);
+            DefaultLogger::get()->error(LogErrorPrefix<TDeriving>() +(std::string)message);
         }
     }
 
     // ------------------------------------------------------------------------------------------------
     static void LogInfo(const Formatter::format& message)   {
         if (!DefaultLogger::isNullLogger()) {
-            DefaultLogger::get()->info(log_prefix+(std::string)message);
+            DefaultLogger::get()->info(LogErrorPrefix<TDeriving>() +(std::string)message);
         }
     }
 
     // ------------------------------------------------------------------------------------------------
     static void LogDebug(const Formatter::format& message)  {
         if (!DefaultLogger::isNullLogger()) {
-            DefaultLogger::get()->debug(log_prefix+(std::string)message);
+            DefaultLogger::get()->debug(LogErrorPrefix<TDeriving>() +(std::string)message);
         }
     }
 
@@ -123,10 +125,6 @@ public:
     }
 
 #endif
-
-private:
-
-    static const std::string log_prefix;
 
 };
 
